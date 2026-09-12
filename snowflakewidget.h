@@ -7,6 +7,9 @@
 #include <QPointF>
 #include <QTimer>
 #include <QLabel>
+#include <QWheelEvent>
+#include <QMouseEvent>
+#include <QPushButton>
 
 class SnowflakeWidget : public QWidget
 {
@@ -15,9 +18,13 @@ public:
   explicit SnowflakeWidget (QWidget *parent = nullptr);
 protected:
   void paintEvent(QPaintEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
 private slots:
   void onSliderValueChanged(int value);
   void onTimerTick();
+  void onResetClicked();
 private:
   QSlider *m_slider;
   int m_currentlevel;
@@ -28,7 +35,10 @@ private:
   int m_segmentsToDraw;
   QPointF m_cursorPos;
   QLabel *m_label;
+  QPushButton *m_resetButton;
   qreal m_zoom;
+  QPointF m_offset;
+  QPointF m_lastMousePos;
 
 signals:
 };

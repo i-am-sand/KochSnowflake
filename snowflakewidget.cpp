@@ -9,19 +9,24 @@ SnowflakeWidget::SnowflakeWidget (QWidget *parent) : QWidget{ parent } {
   m_drawProgress = 100;
   m_segmentsDrawn = 0;
   m_segmentsToDraw = 0;
+  m_zoom = 1.0;
+  m_offset = QPointF(0, 0);
   m_slider = new QSlider(Qt::Horizontal, this);
   m_slider->setRange(0, 7);
   m_slider->setValue(0);
   m_label = new QLabel("Уровень: 0", this);
+  m_resetButton = new QPushButton("Сброс", this);
 
   QBoxLayout *layout = new QVBoxLayout(this);
   layout->addStretch();
   layout->addWidget(m_label);
   layout->addWidget(m_slider);
+  layout->addWidget(m_resetButton);
   connect(m_slider, &QSlider::valueChanged, this, &SnowflakeWidget::onSliderValueChanged);
   m_drawTimer = new QTimer(this);
   m_drawTimer->setInterval(30);
   connect(m_drawTimer, &QTimer::timeout, this, &SnowflakeWidget::onTimerTick);
+  connect(m_resetButton, &QPushButton::clicked, this, &SnowflakeWidget::onResetClicked);
 
 }
 
@@ -42,11 +47,49 @@ void SnowflakeWidget::onTimerTick(){
   update();
 }
 
+void SnowflakeWidget::onResetClicked()
+{
+  m_zoom = 1.0;
+  m_offset = QPointF(0, 0);
+  m_slider->setValue(0);
+  update();
+}
+
+void SnowflakeWidget::wheelEvent(QWheelEvent *event) {
+  if (event->angleDelta().y() > 0){
+      m_zoom *= 1.1;
+    } else {
+      m_zoom /= 1.1;
+    }
+  if (m_zoom < 0.5) m_zoom = 0.5;
+  if (m_zoom > 50.0) m_zoom = 50.0;
+  update();
+}
+
+void SnowflakeWidget::mousePressEvent(QMouseEvent *event)
+{
+  if (event->button() == Qt::LeftButton) {
+      m_lastMousePos = event->pos();
+    }
+}
+
+void SnowflakeWidget::mouseMoveEvent(QMouseEvent *event)
+{
+  if (event->buttons() & Qt::LeftButton) {
+      QPointF delta = event->pos() - m_lastMousePos;
+      m_offset += delta;
+      m_lastMousePos = event->pos();
+      update();
+    }
+}
+
 void SnowflakeWidget::paintEvent(QPaintEvent *event) {
   Q_UNUSED(event);
   QPainter painter(this);
   painter.fillRect(rect(), QColor(20, 25, 40));
   painter.translate(width() / 2.0, height() / 2.0 - 20);
+  painter.translate(m_offset);
+  painter.scale(m_zoom, m_zoom);
 
   qreal R = qMin(width(), height()) * 0.35;
   QPointF p1(0, -R);
