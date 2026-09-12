@@ -1,0 +1,13 @@
+build/
+*.pro.user
+*.pro.user.*
+Makefile
+*.o
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+.qtc_clangd/
+.cache/
+KochSnowflake
+*.exe
