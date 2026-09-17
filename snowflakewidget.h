@@ -5,8 +5,8 @@
 #include <QSlider>
 #include <QPainter>
 #include <QPointF>
-#include <QTimer>
 #include <QLabel>
+#include <QTimer>
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QPushButton>
@@ -23,17 +23,14 @@ protected:
   void mouseMoveEvent(QMouseEvent *event) override;
 private slots:
   void onSliderValueChanged(int value);
-  void onTimerTick();
   void onResetClicked();
+  void onFadeTick();
 private:
   QSlider *m_slider;
   int m_currentlevel;
   void drawKoch(QPainter &painter, const QPointF &a, const QPointF &b, int depth);
-  QTimer *m_drawTimer;
-  int m_drawProgress;
-  int m_segmentsDrawn;
-  int m_segmentsToDraw;
-  QPointF m_cursorPos;
+  QTimer *m_fadeTimer;
+  qreal m_opacity;
   QLabel *m_label;
   QPushButton *m_resetButton;
   qreal m_zoom;

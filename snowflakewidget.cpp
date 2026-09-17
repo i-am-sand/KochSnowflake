@@ -6,13 +6,11 @@
 
 SnowflakeWidget::SnowflakeWidget (QWidget *parent) : QWidget{ parent } {
   m_currentlevel = 0;
-  m_drawProgress = 100;
-  m_segmentsDrawn = 0;
-  m_segmentsToDraw = 0;
   m_zoom = 1.0;
   m_offset = QPointF(0, 0);
+  m_opacity = 1.0;
   m_slider = new QSlider(Qt::Horizontal, this);
-  m_slider->setRange(0, 7);
+  m_slider->setRange(0, 10);
   m_slider->setValue(0);
   m_label = new QLabel("Уровень: 0", this);
   m_resetButton = new QPushButton("Сброс", this);
@@ -23,27 +21,18 @@ SnowflakeWidget::SnowflakeWidget (QWidget *parent) : QWidget{ parent } {
   layout->addWidget(m_slider);
   layout->addWidget(m_resetButton);
   connect(m_slider, &QSlider::valueChanged, this, &SnowflakeWidget::onSliderValueChanged);
-  m_drawTimer = new QTimer(this);
-  m_drawTimer->setInterval(30);
-  connect(m_drawTimer, &QTimer::timeout, this, &SnowflakeWidget::onTimerTick);
   connect(m_resetButton, &QPushButton::clicked, this, &SnowflakeWidget::onResetClicked);
-
+  m_fadeTimer = new QTimer(this);
+  m_fadeTimer->setInterval(16);
+  connect(m_fadeTimer, &QTimer::timeout,
+           this, &SnowflakeWidget::onFadeTick);
 }
 
 void SnowflakeWidget::onSliderValueChanged(int value){
   m_currentlevel = value;
   m_label->setText(QString("Уровень: %1").arg(value));
-  m_drawProgress = 0;
-  m_drawTimer->start();
-  update();
-}
-
-void SnowflakeWidget::onTimerTick(){
-  m_drawProgress += 2;
-  if (m_drawProgress >= 100) {
-      m_drawProgress = 100;
-      m_drawTimer->stop();
-    }
+  m_opacity = 0.0;
+  m_fadeTimer->start();
   update();
 }
 
@@ -52,6 +41,15 @@ void SnowflakeWidget::onResetClicked()
   m_zoom = 1.0;
   m_offset = QPointF(0, 0);
   m_slider->setValue(0);
+  update();
+}
+
+void SnowflakeWidget::onFadeTick() {
+  m_opacity += 0.08;
+  if (m_opacity >= 1.0) {
+      m_opacity = 1.0;
+      m_fadeTimer->stop();
+    }
   update();
 }
 
@@ -95,28 +93,18 @@ void SnowflakeWidget::paintEvent(QPaintEvent *event) {
   QPointF p1(0, -R);
   QPointF p2(-R * qSqrt(3.0) / 2.0, R / 2.0);
   QPointF p3(R * qSqrt(3.0) / 2.0, R / 2.0);
-  painter.setPen(QPen(QColor(150, 220, 255), 1.5));
+  painter.setPen(QPen(QColor(150, 220, 255), 1.0));
   painter.setBrush(Qt::NoBrush);
-  int totalSegments = 3 * static_cast<int>(qPow(4, m_currentlevel));
-  m_segmentsToDraw = totalSegments * m_drawProgress / 100;
-  m_segmentsDrawn = 0;
-  m_cursorPos = p1;
+  painter.setOpacity(m_opacity);
+
   drawKoch(painter, p1, p2, m_currentlevel);
   drawKoch(painter, p2, p3, m_currentlevel);
   drawKoch(painter, p3, p1, m_currentlevel);
-  if (m_segmentsDrawn > 0 && m_segmentsDrawn < totalSegments) {
-      painter.setPen(Qt::NoPen);
-      painter.setBrush(QColor(255, 240, 150));
-      painter.drawEllipse(m_cursorPos, 5, 5);
-    }
 }
 
 void SnowflakeWidget::drawKoch(QPainter &painter, const QPointF &a, const QPointF &b, int depth){
-  if (m_segmentsDrawn >= m_segmentsToDraw) return;
   if (!depth){
       painter.drawLine(a, b);
-      ++m_segmentsDrawn;
-      m_cursorPos = b;
       return;
     }
   QPointF delta, pA, pB;
